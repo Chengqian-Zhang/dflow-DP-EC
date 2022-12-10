@@ -1,0 +1,10 @@
+{
+    "email": "",
+    "password": "",
+    "program_id": ,
+    "Number of dp pot used":4,
+    "MD simulation steps":1000,
+    "No. of FP":2,
+    "bulk vbm(hartree)": 0.182771,
+    "bulk cbm(hartree)": 0.222584
+}
