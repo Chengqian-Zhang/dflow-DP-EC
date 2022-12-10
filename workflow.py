@@ -1,6 +1,3 @@
-from dflow.python import upload_packages
-import tempfile
-tempfile.tempdir = "/data/tmp"
 import json,pathlib
 from typing import List
 from dflow import (
@@ -29,7 +26,6 @@ import subprocess, os, shutil, glob, ase.io
 from pathlib import Path
 from typing import List
 from monty.serialization import loadfn
-from dflow.plugins.bohrium import BohriumContext, BohriumExecutor
 from dflow.plugins.dispatcher import DispatcherExecutor
 from monty.serialization import loadfn
 
@@ -67,30 +63,32 @@ def get_density_dev(density_file_list):
     return den_mean, den_dev, z
 
 class lammps(OP):
-    """
+    '''
     class for run MD in lammps
-    """
+    '''
     def __init__(self,infomode=1):
         self.infomode = infomode
-
+    
     @classmethod
     def get_input_sign(cls):
         return OPIOSign({
             'input_lammps': Artifact(Path),
         })
-
+    
     @classmethod
     def get_output_sign(cls):
         return OPIOSign({
-            'output_lammps': Artifact(Path)                                                                                                             
+            'output_lammps': Artifact(Path)                                                                                                                                         
         })
-
+    
     @OP.exec_sign_check
     def execute(self, op_in: OPIO) -> OPIO:
         cwd = os.getcwd()
         os.chdir(op_in["input_lammps"])
         cmd = "lmp -i in.lammps"
         subprocess.call(cmd, shell=True)
+        os.system("rm -r c00*")
+        os.system("rm -r properties.dat")
         os.chdir(cwd)
         op_out = OPIO({
             "output_lammps": op_in["input_lammps"]
@@ -103,20 +101,20 @@ class modeldevi(OP):
     '''
     def __init__(self,infomode=1):
         self.infomode = infomode
-
+    
     @classmethod
     def get_input_sign(cls):
         return OPIOSign({
             'input_devi': Artifact(Path),
             'nmodel': int
         })
-
+    
     @classmethod
     def get_output_sign(cls):
         return OPIOSign({
-            'output_devi': Artifact(Path)                                                                                                               
+            'output_devi': Artifact(Path)                                                                                                                                         
         })
-
+    
     @OP.exec_sign_check
     def execute(self, op_in: OPIO) -> OPIO:
         cwd = os.getcwd()
@@ -159,20 +157,20 @@ class densityprofile(OP):
     '''
     def __init__(self,infomode=1):
         self.infomode = infomode
-
+    
     @classmethod
     def get_input_sign(cls):
         return OPIOSign({
             'input_density': Artifact(Path),
             'nmodel': int
         })
-
+    
     @classmethod
     def get_output_sign(cls):
         return OPIOSign({
-            'output_density': Artifact(Path)                                                                                                            
+            'output_density': Artifact(Path)                                                                                                                                         
         })
-
+    
     @OP.exec_sign_check
     def execute(self, op_in: OPIO) -> OPIO:
         cwd = os.getcwd()
@@ -192,7 +190,7 @@ class densityprofile(OP):
         surf1_Sn_idx = [593, 595, 596, 599, 604, 606, 609, 613, 619, 633, 636, 642, 648, 656, 661, 663]
         cell = [12.745, 13.399, 40.985]
         O_idx = [287, 288, 289, 291, 292, 293, 294, 298, 301, 303, 304, 305, 307, 310, 311, 315, 320, 322, 325, 326, 330, 333, 336, 339, 340, 342, 345, 346, 347, 348, 349, 352, 358, 361, 363, 364, 365, 366, 367, 368, 370, 373, 376, 379, 382, 384, 385, 386, 388, 389, 391, 392, 393, 394, 395, 396, 397, 400, 403, 406, 408, 410, 411, 414, 417, 419, 420, 421, 422, 423, 424, 425, 428, 429, 430, 432, 435, 438, 441, 444, 445, 447, 452, 453, 455, 458, 460, 461, 463, 464, 465, 466, 469, 472, 473, 474, 478, 481, 485, 487, 488, 490, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519, 522, 523, 525, 528, 531, 534, 537, 539, 540, 541, 542, 547, 548, 550, 553, 556, 558, 561, 564, 567, 570, 571, 572, 573, 574, 575, 578, 579, 580, 583, 584, 585, 586, 587]
-
+        
         # process trajectory
         for idx, traj_file in enumerate(traj_file_list):
             inp_dict={
@@ -215,7 +213,7 @@ class densityprofile(OP):
             ad.run()
         # plot density
         density_file_list = ["O_density_0.dat", "O_density_1.dat", "O_density_2.dat", "O_density_3.dat"]
-
+        
         row = 1
         col = 1
         fig = plt.figure(figsize=(12*col,6*row), dpi=150, facecolor='white')
@@ -241,7 +239,7 @@ class DFTtasks(OP):
     '''
     def __init__(self,infomode=1):
         self.infomode = infomode
-
+    
     @classmethod
     def get_input_sign(cls):
         return OPIOSign({
@@ -249,13 +247,13 @@ class DFTtasks(OP):
             'nsample': int,
             'cp2k_input': Artifact(Path),
         })
-
+    
     @classmethod
     def get_output_sign(cls):
         return OPIOSign({
-            'output_dfttasks': Artifact(List[Path])                                                                                                     
+            'output_dfttasks': Artifact(List[Path])                                                                                                                                         
         })
-
+    
     @OP.exec_sign_check
     def execute(self, op_in: OPIO) -> OPIO:
         cwd = os.getcwd()
@@ -291,30 +289,33 @@ class DFTtasks(OP):
         return op_out
 
 class CP2K(OP):
-    """
+    '''
     class for CP2K calculation
-    """
+    '''
     def __init__(self,infomode=1):
         self.infomode = infomode
-
+    
     @classmethod
     def get_input_sign(cls):
         return OPIOSign({
             'input_cp2k': Artifact(Path),
         })
-
+    
     @classmethod
     def get_output_sign(cls):
         return OPIOSign({
-            'output_cp2k': Artifact(Path)                                                                                                               
+            'output_cp2k': Artifact(Path)                                                                                                                                         
         })
-
+    
     @OP.exec_sign_check
     def execute(self, op_in: OPIO) -> OPIO:
         cwd = os.getcwd()
         os.chdir(op_in["input_cp2k"])
-        cmd = "bash -c \"ulimit -s unlimited && source /opt/intel/oneapi/setvars.sh && source /root/cp2k-7.1/tools/toolchain/install/setup && mpirun -n 32 --allow-run-as-root --oversubscribe /root/cp2k-7.1/exe/local/cp2k.popt -i template.inp -o output.out\""
-        subprocess.call(cmd, shell=True)
+        cmd = "bash -c \"source /cp2k-7.1/tools/toolchain/install/setup && mpirun --oversubscribe --allow-run-as-root -np 16 /cp2k-7.1/exe/local/cp2k.popt -i template.inp -o output.out\""
+        subprocess.call(cmd, shell=True)    
+        os.system("rm -r SnO2-RESTART*")
+        os.system("rm -r SnO2-k*")
+        os.system("rm -r output*")
         os.chdir(cwd)
         op_out = OPIO({
             "output_cp2k": op_in["input_cp2k"]
@@ -327,20 +328,20 @@ class DFTpost(OP):
     '''
     def __init__(self,infomode=1):
         self.infomode = infomode
-
+    
     @classmethod
     def get_input_sign(cls):
         return OPIOSign({
             'input_dftpost': Artifact(Path),
             'nsample': int
         })
-
+    
     @classmethod
     def get_output_sign(cls):
         return OPIOSign({
-            'output_dftpost': Artifact(Path)                                                                                                            
+            'output_dftpost': Artifact(Path)                                                                                                                                         
         })
-
+    
     @OP.exec_sign_check
     def execute(self, op_in: OPIO) -> OPIO:
         cwd = os.getcwd()
@@ -364,20 +365,20 @@ class hartree(OP):
     '''
     def __init__(self,infomode=1):
         self.infomode = infomode
-
+    
     @classmethod
     def get_input_sign(cls):
         return OPIOSign({
             'input_hartree': Artifact(Path),
             'nsample': int
         })
-
+    
     @classmethod
     def get_output_sign(cls):
         return OPIOSign({
-            'output_hartree': Artifact(Path)                                                                                                            
+            'output_hartree': Artifact(Path)                                                                                                                                         
         })
-
+    
     @OP.exec_sign_check
     def execute(self, op_in: OPIO) -> OPIO:
         cwd = os.getcwd()
@@ -424,20 +425,22 @@ class bandalignment(OP):
     '''
     def __init__(self,infomode=1):
         self.infomode = infomode
-
+    
     @classmethod
     def get_input_sign(cls):
         return OPIOSign({
             'input_band': Artifact(Path),
-            'nsample': int
+            'nsample': int,
+            'bulk_vbm': float,
+            'bulk_cbm': float
         })
-
+    
     @classmethod
     def get_output_sign(cls):
         return OPIOSign({
-            'output_band': Artifact(Path)                                                                                                               
+            'output_band': Artifact(Path)                                                                                                                                         
         })
-
+    
     @OP.exec_sign_check
     def execute(self, op_in: OPIO) -> OPIO:
         cwd = os.getcwd()
@@ -452,8 +455,8 @@ class bandalignment(OP):
         os.chdir(band_input_path)
         os.system("ln -s ../../05.solid_water_hartree/01.outputs/solid_hartree.dat solid_hartree.dat")
         os.system("ln -s ../../05.solid_water_hartree/01.outputs/water_hartree.dat water_hartree.dat")
-        bulk_vbm = 0.182771
-        bulk_cbm = 0.222584
+        bulk_vbm = op_in["bulk_vbm"]
+        bulk_cbm = op_in["bulk_cbm"]
 
         solid_width_list = np.loadtxt("./solid_hartree.dat", usecols=0)
         solid_hartree_list = np.loadtxt("./solid_hartree.dat", usecols=1)
@@ -474,12 +477,66 @@ class bandalignment(OP):
         })
         return op_out
 
-def main():
+def main(param):
+    email = param.get("email",None)
+    password = param.get("password",None)
+    program_id = param.get("program_id",None)
+    Number_of_dp_pot_used = param.get("Number of dp pot used",None)
+    MD_simulation_steps = param.get("MD simulation steps",None)
+    No_of_FP = param.get("No. of FP",None)
+    bulk_vbm = param.get("bulk vbm(hartree)",None)
+    bulk_cbm = param.get("bulk cbm(hartree)",None)
+
+    ## 定义executor
+    dispatcher_executor_cp2k = DispatcherExecutor(
+        image="registry.dp.tech/deepmodeling/dpdispatcher:latest",
+        machine_dict={
+            "batch_type": "Bohrium",
+            "context_type": "Bohrium",
+            "remote_profile": {
+                "email": email,
+                "password": password,
+                "program_id": program_id,
+                "input_data": {
+                    "platform": "ali",
+                    "scass_type":"c4_m8_cpu",
+                    "job_type":"container",
+                },
+            },
+        },
+    )
+    dispatcher_executor_lmp = DispatcherExecutor(
+        image="registry.dp.tech/deepmodeling/dpdispatcher:latest",
+        machine_dict={
+            "batch_type": "Bohrium",
+            "context_type": "Bohrium",
+            "remote_profile": {
+                "email": email,
+                "password": password,
+                "program_id": program_id,
+                "input_data": {
+                    "platform": "ali",
+                    "scass_type":"c16_m62_1 * NVIDIA T4",
+                    "job_type":"container",
+                },
+            },
+        },
+    )
     ## Organizing lammps input files
-    n_model = 4
-    nsample = 3
+    n_model = int(Number_of_dp_pot_used)
+    nsample = int(No_of_FP)
     cwd = os.getcwd()
     input_path = os.path.join(cwd,"01.dpmd","00.inputs")
+    os.chdir(input_path)
+    while(1):
+        with open("in.lammps-0","r") as f:
+            line = f.readline()
+        if 'NSTEPS' in line:
+            os.system("sed -i '1d' in*")
+        else:
+            break
+    os.system("sed -i '1i variable            NSTEPS          equal %d' in*"%(int(MD_simulation_steps)))
+    os.chdir(cwd)
     pot_path = os.path.join(cwd,"01.dpmd","01.pot")
     output_path = os.path.join(cwd,"01.dpmd","02.outputs")
     if(os.path.exists(output_path)):
@@ -493,33 +550,27 @@ def main():
         for jj in range(n_model):
             os.symlink(os.path.join(pot_path,"c%03d.pb"%jj),os.path.join(task_path,"c%03d.pb"%jj))
     tasks = glob.glob(os.path.join(output_path,"*.run"))
-
+    
     ## define a workflow
-    wf = Workflow(name = "dpectutorial",context=brm_context)
+    wf = Workflow(name = "dpectutorial",pod_gc_strategy = "OnPodCompletion")
     ## Step1 run MD by lammps
-    '''
-    如果在本地运行lammps,用这段代码
-    lammps_tem = PythonOPTemplate(lammps,slices=Slices("{{item}}", input_artifact=["input_lammps"],output_artifact=["output_lammps"]),image="registry.dp.tech/dptech/deepmd-kit:2.1.5-cuda11.6",command=["python3"])
-    md_lammps = Step("MD-LAMMPS",template=lammps_tem,artifacts={"input_lammps":upload_artifact(tasks)},with_param=argo_range(n_model),key="MD-LAMMPS-{{item}}",util_image="registry.dp.tech/dptech/deepmd-kit:2.1.5-cuda11.6",util_command=['python3'])
+    lammps_tem = PythonOPTemplate(lammps,slices=Slices("{{item}}", input_artifact=["input_lammps"],output_artifact=["output_lammps"]),image="registry.dp.tech/dptech/prod-11461/deepmdkitjiageng:v1",command=["python3"])
+    md_lammps = Step("MD-LAMMPS",template=lammps_tem,artifacts={"input_lammps":upload_artifact(tasks)},with_param=argo_range(n_model),key="MD-LAMMPS-{{item}}",util_command=['python3'],executor=dispatcher_executor_lmp)
     wf.add(md_lammps)
-    '''
-    lammps_tem = PythonOPTemplate(lammps,slices=Slices("{{item}}", input_artifact=["input_lammps"],output_artifact=["output_lammps"]),image="registry.dp.tech/dptech/prod-11461/chengqian:v2",command=["python3"])
-    md_lammps = Step("MD-LAMMPS",template=lammps_tem,artifacts={"input_lammps":upload_artifact(tasks)},with_param=argo_range(n_model),key="MD-LAMMPS-{{item}}",util_image="registry.dp.tech/dptech/prod-11461/chengqian:v2",util_command=['python3'],executor=BohriumExecutor(executor="bohrium_v2", extra={"scassType":"c32_m128_4 * NVIDIA V100","projectId": 1065,"jobType":"container", "logFiles": []}))
-    wf.add(md_lammps)
-
+    
     ## Step2 model_devi
     Modeldevi = Step(
-        name="MODELDEVI",
-        template=PythonOPTemplate(modeldevi,image="registry.dp.tech/dptech/prod-11461/chengqian:v2",command=["python3"]),
+        name="MODELDEVI", 
+        template=PythonOPTemplate(modeldevi,image="registry.dp.tech/dptech/prod-11461/jiageng:v1",command=["python3"]),
         artifacts={"input_devi":md_lammps.outputs.artifacts["output_lammps"]},
         parameters = {"nmodel":n_model}
         )
     wf.add(Modeldevi)
-
+    
     ## Step3 density
     Density = Step(
-        name="DENSITY",
-        template=PythonOPTemplate(densityprofile,image="registry.dp.tech/dptech/prod-11461/chengqian:v2",command=["python3"]),
+        name="DENSITY", 
+        template=PythonOPTemplate(densityprofile,image="registry.dp.tech/dptech/prod-11461/jiageng:v1",command=["python3"]),
         artifacts={"input_density":Modeldevi.outputs.artifacts["output_devi"]},
         parameters = {"nmodel":n_model}
         )
@@ -527,8 +578,8 @@ def main():
 
     ## Step4 prepare cp2k tasks
     dfttasks = Step(
-        name="DFTTASKS",
-        template=PythonOPTemplate(DFTtasks,image="registry.dp.tech/dptech/prod-11461/chengqian:v2",command=["python3"]),
+        name="DFTTASKS", 
+        template=PythonOPTemplate(DFTtasks,image="registry.dp.tech/dptech/prod-11461/jiageng:v1",command=["python3"]),
         artifacts={"input_dfttasks":md_lammps.outputs.artifacts["output_lammps"],
                    "cp2k_input":upload_artifact("template.inp")
                 },
@@ -537,14 +588,14 @@ def main():
     wf.add(dfttasks)
 
     ## Step5 run cp2k tasks
-    cp2k = PythonOPTemplate(CP2K,slices=Slices("{{item}}", input_artifact=["input_cp2k"],output_artifact=["output_cp2k"]),image="toolkit_ase_cp2k",command=["python3"])
-    cp2k_cal = Step("CP2K-Cal",template=cp2k,artifacts={"input_cp2k":dfttasks.outputs.artifacts["output_dfttasks"]},with_param=argo_range(nsample),key="CP2K-Cal-{{item}}",util_command=['python3'],executor=BohriumExecutor(executor="bohrium_v2", extra={"scassType":"c32_m128_cpu","projectId": 1065, "logFiles": []}))
+    cp2k = PythonOPTemplate(CP2K,slices=Slices("{{item}}", input_artifact=["input_cp2k"],output_artifact=["output_cp2k"]),image="registry.dp.tech/dptech/cp2ktool:v1",command=["/opt/miniconda/bin/python3"])
+    cp2k_cal = Step("CP2K-Cal",template=cp2k,artifacts={"input_cp2k":dfttasks.outputs.artifacts["output_dfttasks"]},with_param=argo_range(nsample),key="CP2K-Cal-{{item}}",util_command=['python3'],executor=dispatcher_executor_cp2k)   
     wf.add(cp2k_cal)
 
     ## Step6 collect *.cube files
     dftpost = Step(
-        name="DFTPOST",
-        template=PythonOPTemplate(DFTpost,image="registry.dp.tech/dptech/prod-11461/chengqian:v2",command=["python3"]),
+        name="DFTPOST", 
+        template=PythonOPTemplate(DFTpost,image="registry.dp.tech/dptech/prod-11461/jiageng:v1",command=["python3"]),
         artifacts={"input_dftpost":cp2k_cal.outputs.artifacts["output_cp2k"]},
         parameters = {"nsample":nsample}
         )
@@ -552,8 +603,8 @@ def main():
 
     ## Step7 hartree
     Hartree = Step(
-        name="HARTREE",
-        template=PythonOPTemplate(hartree,image="registry.dp.tech/dptech/prod-11461/chengqian:v2",command=["python3"]),
+        name="HARTREE", 
+        template=PythonOPTemplate(hartree,image="registry.dp.tech/dptech/prod-11461/jiageng:v1",command=["python3"]),
         artifacts={"input_hartree":dftpost.outputs.artifacts["output_dftpost"]},
         parameters = {"nsample":nsample}
         )
@@ -561,10 +612,12 @@ def main():
 
     ## Step8 bandalignment
     Bandalignment = Step(
-        name="BANDALIGNMENT",
-        template=PythonOPTemplate(bandalignment,image="registry.dp.tech/dptech/prod-11461/chengqian:v2",command=["python3"]),
+        name="BANDALIGNMENT", 
+        template=PythonOPTemplate(bandalignment,image="registry.dp.tech/dptech/prod-11461/jiageng:v1",command=["python3"]),
         artifacts={"input_band":Hartree.outputs.artifacts["output_hartree"]},
-        parameters = {"nsample":nsample}
+        parameters = {"nsample":nsample,
+                      "bulk_cbm":float(bulk_cbm),
+                      "bulk_vbm":float(bulk_vbm)}
         )
     wf.add(Bandalignment)
 
@@ -582,17 +635,11 @@ def main():
 
     assert(wf.query_status() == 'Succeeded')
     step8 = wf.query_step(name="BANDALIGNMENT")[0]
-    download_artifact(step8.outputs.artifacts["output_band"])
+    download_artifact(step8.outputs.artifacts["output_band"]) 
 
 if __name__ == "__main__":
-    brm_context = BohriumContext(
-        executor="mixed",
-        #executor="bohrium_v2",
-        extra={"scass_type":"c32_m128_4 * NVIDIA V100","program_id":1065,"job_type":"container"}, # 全局bohrium配置
-        username="",
-        password=""
-    )
-    main()
+    param = loadfn("info.json")
+    main(param)
     ## 后处理
     os.system("mv tmp/inputs/artifacts/input_devi/02.model_devi_plots ./")
     os.system("mv tmp/inputs/artifacts/input_devi/03.o_density_profile ./")
