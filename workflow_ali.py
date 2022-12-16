@@ -311,7 +311,7 @@ class CP2K(OP):
     def execute(self, op_in: OPIO) -> OPIO:
         cwd = os.getcwd()
         os.chdir(op_in["input_cp2k"])
-        cmd = "bash -c \"source /cp2k-7.1/tools/toolchain/install/setup && mpirun --oversubscribe --allow-run-as-root -np 16 /cp2k-7.1/exe/local/cp2k.popt -i template.inp -o output.out\""
+        cmd = "bash -c \"ulimit -s unlimited && ulimit -m unlimited && source /cp2k-7.1/tools/toolchain/install/setup && mpirun --oversubscribe --allow-run-as-root -np 16 /cp2k-7.1/exe/local/cp2k.popt -i template.inp -o output.out\""
         subprocess.call(cmd, shell=True)    
         os.system("rm -r SnO2-RESTART*")
         os.system("rm -r SnO2-k*")
@@ -499,7 +499,7 @@ def main(param):
                 "program_id": program_id,
                 "input_data": {
                     "platform": "ali",
-                    "scass_type":"c4_m8_cpu",
+                    "scass_type":"c8_m16_cpu",
                     "job_type":"container",
                 },
             },
