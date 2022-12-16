@@ -1,4 +1,3 @@
-# dpec
 # Workflow Chart
 1. N dpmd simulations (N=4 in this case) (check 01.dpmd)
    1. inputs:
